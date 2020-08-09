@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8" />
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+    }
+
+    body {
+      padding-top: 100px;
+      font-family: monospace;
+    }
+
+    .y-axis line {
+      stroke: black;
+    }
+
+    .bar-label,
+    .x-axis {
+      font-size: 8px;
+    }
+
+    .domain,
+    .tick line {
+      opacity: 0.5;
+    }
+
+    svg {
+      display: inline;
+    }
+  </style>
+</head>
+
+<body>
+  <script>
+    async function getData() {
+      const data = await d3.csv("data/deaths2.csv");
+      const result = {};
+      data.forEach(({ region, year, month, deaths }) => {
+        result[region] = result[region] || [];
+        result[region].push({
+          date: new Date(+year, +month - 1, 1),
+          deaths: +deaths,
+        });
+      });
+      return result;
+    }
+
+    getData().then((data) => {
+      window.data = data;
+      let sorted = [];
+      Object.keys(data).forEach((region) => {
+        data[region] = calcData(data[region]);
+        sorted.push([d3.sum(data[region].map((d) => d.deaths)), region]);
+      });
+      sorted.sort((a, b) => d3.ascending(a[0], b[0])).reverse();
+
+      sorted.forEach(([_, region]) => {
+        plotRegion(data[region], region);
+      });
+    });
+
+    function calcData(data) {
+      const start = new Date(2020, 0, 1);
+      var baseline = {};
+      data
+        .filter((d) => d.date < start)
+        .forEach((d) => {
+          const month = d.date.getMonth();
+          baseline[month] = baseline[month] || [];
+          baseline[month].push(d.deaths);
+        });
+      Object.keys(baseline).forEach((month) => {
+        baseline[month] = d3.mean(baseline[month]);
+      });
+      const plotData = data.filter((d) => d.date >= start);
+      const yData = plotData.map((d) => {
+        return { date: d.date, deaths: d.deaths - baseline[d.date.getMonth()] };
+      });
+      return yData;
+    }
+
+    function plotRegion(data, region) {
+      var margin = { top: 40, right: 50, bottom: 60, left: 50 };
+
+      var width = 40 * data.length - margin.left - margin.right,
+        height = 200 - margin.top - margin.bottom;
+
+      var svg = d3
+        .select("#graphs")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+      const ymin = d3.min(data, function (d) {
+        return d.deaths;
+      });
+      const ymax = d3.max(data, function (d) {
+        return d.deaths;
+      });
+      var y = d3
+        .scaleLinear()
+        .domain([ymin - 200, ymax + 200])
+        .range([height, 0]);
+
+      var x = d3
+        .scaleTime()
+        .domain(
+          d3.extent(data, function (d) {
+            return d.date;
+          })
+        )
+        .range([0, width]);
+
+      var yAxis = (g) =>
+        g.call(d3.axisLeft(y).ticks(5)).attr("class", "y-axis");
+
+      var xAxis = (g) =>
+        g
+          .attr("class", "x-axis")
+          .attr("transform", "translate(0," + y(0) + ")")
+          .call(d3.axisBottom(x).tickSizeOuter(0))
+          .call((g) =>
+            g
+              .selectAll(".tick text")
+              .filter((d, i) => data[i].deaths < 0)
+              .attr("text-anchor", "start")
+              .attr("y", -9)
+          );
+
+      svg.append("g").call(xAxis);
+      svg.append("g").call(yAxis);
+      var bars = svg.append("g").attr("class", "bars");
+      bars
+        .selectAll("rect")
+        .data(data)
+        .enter()
+        .append("rect")
+        .attr("y", function (d) {
+          var h = y(d.deaths) - y(0);
+          if (h > 0) {
+            return y(0);
+          }
+          return y(0) + h;
+        })
+        .attr("x", function (d) {
+          return x(d.date);
+        })
+        .attr("width", (d) => x(d3.timeDay.offset(d.date, 10)) - x(d.date))
+        .attr("height", function (d) {
+          return Math.abs(y(d.deaths) - y(0));
+        })
+        .style("fill", function (d) {
+          return d.deaths > 0 ? d3.schemeTableau10[2] : d3.schemeTableau10[4];
+        });
+
+      svg
+        .append("text")
+        .attr("x", width / 2)
+        .attr("y", 0 - margin.top / 2)
+        .attr("text-anchor", "middle")
+        .style("font-size", "10px")
+        .style("text-decoration", "underline")
+        .text(region);
+    }
+  </script>
+  <div id="graphs"></div>
+</body>
