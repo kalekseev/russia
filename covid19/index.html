@@ -202,5 +202,22 @@
         .style("text-decoration", "underline")
         .text(region);
     }
+
+
+    function toggleRegions(query) {
+      document.querySelectorAll('.region-name').forEach(function(item) {
+        var graph = item.parentElement.parentElement.parentElement;
+        graph.style.display = 'none';
+        if (item.textContent.toLowerCase().includes(query.toLowerCase())) {
+          graph.style.display = 'block';
+        }
+      });
+    };
+
+    var searchBar = document.getElementById("searchBar");
+    searchBar.addEventListener("keyup", function(e) {
+      var query = this.value;
+      toggleRegions(query);
+    });
   </script>
 </body>

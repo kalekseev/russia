@@ -108,6 +108,27 @@ h1 {
   height: 100%;
 }
 
+#search {
+  margin-bottom: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#search > label {
+  font-weight: 700;
+  margin-right: 15px;
+}
+
+#search > input {
+  display: inline-block;
+  width: 100%;
+  max-width: 300px;
+  padding: 7.5px 10px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
 
 .y-axis line {
   stroke: black;
