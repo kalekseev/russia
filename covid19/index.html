@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta
+    name="viewport"
+    content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0"
+  />
   <script src="https://d3js.org/d3.v5.min.js"></script>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css" />
 </head>
 
 <body>
@@ -12,25 +15,47 @@
     <div id="controls">
       <div>Смертность в 2020 году относительно</div>
       <label>
-        <input type="radio" id="relative_to_agg" name="relative_to" value="agg" checked onclick="handleRelativeToChange(this);">
+        <input
+          type="radio"
+          id="relative_to_agg"
+          name="relative_to"
+          value="agg"
+          checked
+          onclick="handleRelativeToChange(this);"
+        />
         <span>средней за 2016-2019</span>
       </label>
       <label>
-        <input type="radio" id="relative_to_2019" name="relative_to" value="2019" onclick="handleRelativeToChange(this);">
+        <input
+          type="radio"
+          id="relative_to_2019"
+          name="relative_to"
+          value="2019"
+          onclick="handleRelativeToChange(this);"
+        />
         2019 года
       </label>
     </div>
     <div id="search">
       <label>Поиск:</label>
-      <input type="text" id="searchBar" placeholder="Введите название региона">
+      <input
+        type="text"
+        id="searchBar"
+        placeholder="Введите название региона"
+      />
     </div>
     <div id="graphs"></div>
 
-    <div id="sources">Источники: <a href="https://rosstat.gov.ru/storage/mediabank/fBtgkZHk/edn08-2020.htm">росстат</a></div>
+    <div id="sources">
+      Источники:
+      <a href="https://rosstat.gov.ru/storage/mediabank/fBtgkZHk/edn08-2020.htm"
+        >росстат</a
+      >
+    </div>
   </div>
   <script>
     const FIRST_MONTH = new Date(2020, 0, 1);
-    let relativeTo = "agg"
+    let relativeTo = "agg";
     async function getData() {
       const data = await d3.csv("data/deaths2.csv");
       const result = {};
@@ -50,20 +75,24 @@
     });
 
     function clear() {
-      document.querySelector('#graphs').innerHTML = '';
+      document.querySelector("#graphs").innerHTML = "";
     }
     function handleRelativeToChange(input) {
       relativeTo = input.value;
-      clear()
+      clear();
       setTimeout(() => main(window.data));
     }
+
     function main(data) {
       const result = {};
       Object.keys(data).forEach((region) => {
-        const baseline = (relativeTo === 'agg') ? meanYearsBaseline(data[region]) : year2019Baseline(data[region]);
+        const baseline =
+          relativeTo === "agg"
+            ? meanYearsBaseline(data[region])
+            : year2019Baseline(data[region]);
         result[region] = calcData(data[region], baseline);
       });
-      orderRegionsByAbsYearDeaths(result).forEach(region => {
+      orderRegionsByAbsYearDeaths(result).forEach((region) => {
         plotRegion(result[region], region);
       });
     }
@@ -75,7 +104,7 @@
       });
       result.sort((a, b) => d3.ascending(a[0], b[0])).reverse();
 
-      return result.map(d => d[1]);
+      return result.map((d) => d[1]);
     }
 
     function meanYearsBaseline(data) {
@@ -113,6 +142,78 @@
       return yData;
     }
 
+    var locale = d3.timeFormatLocale({
+      dateTime: "%A, %e %B %Y г. %X",
+      date: "%d.%m.%Y",
+      time: "%H:%M:%S",
+      periods: ["AM", "PM"],
+      days: [
+        "воскресенье",
+        "понедельник",
+        "вторник",
+        "среда",
+        "четверг",
+        "пятница",
+        "суббота",
+      ],
+      shortDays: ["вс", "пн", "вт", "ср", "чт", "пт", "сб"],
+      months: [
+        "январь",
+        "февраля",
+        "март",
+        "апрель",
+        "май",
+        "июнь",
+        "июль",
+        "август",
+        "сентябрь",
+        "октябрь",
+        "ноябрь",
+        "декабрь",
+      ],
+      shortMonths: [
+        "янв",
+        "фев",
+        "мар",
+        "апр",
+        "май",
+        "июн",
+        "июл",
+        "авг",
+        "сен",
+        "окт",
+        "ноя",
+        "дек",
+      ],
+    });
+
+    var formatMillisecond = locale.format(".%L"),
+      formatSecond = locale.format(":%S"),
+      formatMinute = locale.format("%I:%M"),
+      formatHour = locale.format("%I %p"),
+      formatDay = locale.format("%a %d"),
+      formatWeek = locale.format("%b %d"),
+      formatMonth = locale.format("%B"),
+      formatYear = locale.format("%Y");
+
+    function multiFormat(date) {
+      return (d3.timeSecond(date) < date
+        ? formatMillisecond
+        : d3.timeMinute(date) < date
+        ? formatSecond
+        : d3.timeHour(date) < date
+        ? formatMinute
+        : d3.timeDay(date) < date
+        ? formatHour
+        : d3.timeMonth(date) < date
+        ? d3.timeWeek(date) < date
+          ? formatDay
+          : formatWeek
+        : d3.timeYear(date) < date
+        ? formatMonth
+        : formatYear)(date);
+    }
+
     function plotRegion(data, region) {
       var margin = { top: 40, right: 50, bottom: 60, left: 50 };
 
@@ -124,7 +225,12 @@
         .append("div")
         .append("svg")
         .attr("preserveAspectRatio", "xMinYMin meet")
-        .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+        .attr(
+          "viewBox",
+          `0 0 ${width + margin.left + margin.right} ${
+            height + margin.top + margin.bottom
+          }`
+        )
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
         .append("g")
@@ -157,7 +263,7 @@
         g
           .attr("class", "x-axis")
           .attr("transform", "translate(0," + y(0) + ")")
-          .call(d3.axisBottom(x).tickSizeOuter(0))
+          .call(d3.axisBottom(x).tickSizeOuter(0).tickFormat(multiFormat))
           .call((g) =>
             g
               .selectAll(".tick text")
@@ -203,19 +309,18 @@
         .text(region);
     }
 
-
     function toggleRegions(query) {
-      document.querySelectorAll('.region-name').forEach(function(item) {
+      document.querySelectorAll(".region-name").forEach(function (item) {
         var graph = item.parentElement.parentElement.parentElement;
-        graph.style.display = 'none';
+        graph.style.display = "none";
         if (item.textContent.toLowerCase().includes(query.toLowerCase())) {
-          graph.style.display = 'block';
+          graph.style.display = "block";
         }
       });
-    };
+    }
 
     var searchBar = document.getElementById("searchBar");
-    searchBar.addEventListener("keyup", function(e) {
+    searchBar.addEventListener("keyup", function (e) {
       var query = this.value;
       toggleRegions(query);
     });

@@ -1,7 +1,8 @@
 body {
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica,
+    Arial, sans-serif;
   font-size: 16px;
   line-height: 1.5;
   color: #333333;
@@ -20,19 +21,27 @@ body {
 }
 
 @media (min-width: 768px) {
-  .page { max-width: 750px; }
+  .page {
+    max-width: 750px;
+  }
 }
 
 @media (min-width: 992px) {
-  .page { max-width: 970px; }
+  .page {
+    max-width: 970px;
+  }
 }
 
 @media (min-width: 1200px) {
-  .page { max-width: 1170px; }
+  .page {
+    max-width: 1170px;
+  }
 }
 
 @media (min-width: 1600px) {
-  .page { max-width: 1570px; }
+  .page {
+    max-width: 1570px;
+  }
 }
 
 h1 {
@@ -65,7 +74,6 @@ h1 {
   align-items: center;
 }
 
-
 @media (max-width: 991px) {
   #controls {
     flex-direction: column;
@@ -96,11 +104,15 @@ h1 {
 }
 
 @media (min-width: 992px) {
-  #graphs > div { flex-basis: 50%; }
+  #graphs > div {
+    flex-basis: 50%;
+  }
 }
 
 @media (min-width: 1600px) {
-  #graphs > div { flex-basis: 33.3%; }
+  #graphs > div {
+    flex-basis: 33.3%;
+  }
 }
 
 #graphs > div > svg {
