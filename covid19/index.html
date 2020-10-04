@@ -11,7 +11,24 @@
 
 <body>
   <div class="page">
-    <h1>Смертность во время пандемии COVID19</h1>
+    <h1>Избыточная смертность в <span id="titleRegion">России</span> во время пандемии Covid19</h1>
+    <div id="sources">
+      по данным
+      <a href="https://rosstat.gov.ru/storage/mediabank/fBtgkZHk/edn08-2020.htm"
+        >росстата</a
+      >
+    </div>
+    <div id="backToList">
+      <a href="."> &lt;перейти к списку регионов</a>
+    </div>
+    <div id="search">
+      <label>Поиск:</label>
+      <input
+        type="text"
+        id="searchBar"
+        placeholder="Введите название региона"
+      />
+    </div>
     <div id="controls">
       <div>Смертность в 2020 году относительно</div>
       <label>
@@ -36,26 +53,62 @@
         2019 года
       </label>
     </div>
-    <div id="search">
-      <label>Поиск:</label>
-      <input
-        type="text"
-        id="searchBar"
-        placeholder="Введите название региона"
-      />
-    </div>
     <div id="graphs"></div>
-
-    <div id="sources">
-      Источники:
-      <a href="https://rosstat.gov.ru/storage/mediabank/fBtgkZHk/edn08-2020.htm"
-        >росстат</a
-      >
-    </div>
   </div>
   <script>
     const FIRST_MONTH = new Date(2020, 0, 1);
-    let relativeTo = "agg";
+    var locale = d3.timeFormatLocale({
+      dateTime: "%A, %e %B %Y г. %X",
+      date: "%d.%m.%Y",
+      time: "%H:%M:%S",
+      periods: ["AM", "PM"],
+      days: [
+        "воскресенье",
+        "понедельник",
+        "вторник",
+        "среда",
+        "четверг",
+        "пятница",
+        "суббота",
+      ],
+      shortDays: ["вс", "пн", "вт", "ср", "чт", "пт", "сб"],
+      months: [
+        "январь",
+        "февраль",
+        "март",
+        "апрель",
+        "май",
+        "июнь",
+        "июль",
+        "август",
+        "сентябрь",
+        "октябрь",
+        "ноябрь",
+        "декабрь",
+      ],
+      shortMonths: [
+        "янв",
+        "фев",
+        "мар",
+        "апр",
+        "май",
+        "июн",
+        "июл",
+        "авг",
+        "сен",
+        "окт",
+        "ноя",
+        "дек",
+      ],
+    });
+
+    // Define the div for the tooltip
+    var tooltip = d3
+      .select("body")
+      .append("div")
+      .attr("class", "tooltip")
+      .style("opacity", 0);
+    var relativeTo = "agg";
     async function getData() {
       const data = await d3.csv("data/deaths2.csv");
       const result = {};
@@ -69,31 +122,67 @@
       return result;
     }
 
+    var epoch = 0;
+
+    document.getElementById("searchBar").addEventListener("keyup", function (e) {
+      window.searchQuery = this.value;
+      toggleRegions();
+    });
+
     getData().then((data) => {
       window.data = data;
+      var params = new URLSearchParams(document.location.search.substring(1));
+      window.regionSelected = params.get("region");
+      if (!data[regionSelected]) {
+        regionSelected = null;
+      } else {
+        document.querySelector("#titleRegion").textContent = `"${regionSelected}"`;
+        document.querySelector('.page').classList.add('single-region')
+      }
       main(data);
     });
 
     function clear() {
-      document.querySelector("#graphs").innerHTML = "";
+      d3.selectAll('#graphs > div').remove();
     }
     function handleRelativeToChange(input) {
       relativeTo = input.value;
-      clear();
       setTimeout(() => main(window.data));
     }
 
     function main(data) {
-      const result = {};
-      Object.keys(data).forEach((region) => {
+      var myEpoch = ++epoch;
+      clear();
+      if (regionSelected) {
         const baseline =
           relativeTo === "agg"
-            ? meanYearsBaseline(data[region])
-            : year2019Baseline(data[region]);
-        result[region] = calcData(data[region], baseline);
-      });
-      orderRegionsByAbsYearDeaths(result).forEach((region) => {
-        plotRegion(result[region], region);
+            ? meanYearsBaseline(data[regionSelected])
+            : year2019Baseline(data[regionSelected]);
+        var result = calcData(data[regionSelected], baseline);
+        plotRegion(result, regionSelected);
+      } else {
+        const result = {};
+        Object.keys(data).forEach((region) => {
+          const baseline =
+            relativeTo === "agg"
+              ? meanYearsBaseline(data[region])
+              : year2019Baseline(data[region]);
+          result[region] = calcData(data[region], baseline);
+        });
+        plotWithTimeout(result, orderRegionsByAbsYearDeaths(result), myEpoch);
+      }
+    }
+
+    function plotWithTimeout(data, regions, myEpoch) {
+      if (!regions.length) {
+        return;
+      }
+      setTimeout(function () {
+        if (myEpoch === epoch) {
+          var region = regions.shift();
+          plotRegion(data[region], region);
+          plotWithTimeout(data, regions, myEpoch);
+        }
       });
     }
 
@@ -142,78 +231,6 @@
       return yData;
     }
 
-    var locale = d3.timeFormatLocale({
-      dateTime: "%A, %e %B %Y г. %X",
-      date: "%d.%m.%Y",
-      time: "%H:%M:%S",
-      periods: ["AM", "PM"],
-      days: [
-        "воскресенье",
-        "понедельник",
-        "вторник",
-        "среда",
-        "четверг",
-        "пятница",
-        "суббота",
-      ],
-      shortDays: ["вс", "пн", "вт", "ср", "чт", "пт", "сб"],
-      months: [
-        "январь",
-        "февраля",
-        "март",
-        "апрель",
-        "май",
-        "июнь",
-        "июль",
-        "август",
-        "сентябрь",
-        "октябрь",
-        "ноябрь",
-        "декабрь",
-      ],
-      shortMonths: [
-        "янв",
-        "фев",
-        "мар",
-        "апр",
-        "май",
-        "июн",
-        "июл",
-        "авг",
-        "сен",
-        "окт",
-        "ноя",
-        "дек",
-      ],
-    });
-
-    var formatMillisecond = locale.format(".%L"),
-      formatSecond = locale.format(":%S"),
-      formatMinute = locale.format("%I:%M"),
-      formatHour = locale.format("%I %p"),
-      formatDay = locale.format("%a %d"),
-      formatWeek = locale.format("%b %d"),
-      formatMonth = locale.format("%B"),
-      formatYear = locale.format("%Y");
-
-    function multiFormat(date) {
-      return (d3.timeSecond(date) < date
-        ? formatMillisecond
-        : d3.timeMinute(date) < date
-        ? formatSecond
-        : d3.timeHour(date) < date
-        ? formatMinute
-        : d3.timeDay(date) < date
-        ? formatHour
-        : d3.timeMonth(date) < date
-        ? d3.timeWeek(date) < date
-          ? formatDay
-          : formatWeek
-        : d3.timeYear(date) < date
-        ? formatMonth
-        : formatYear)(date);
-    }
-
     function plotRegion(data, region) {
       var margin = { top: 40, right: 50, bottom: 60, left: 50 };
 
@@ -223,6 +240,7 @@
       var svg = d3
         .select("#graphs")
         .append("div")
+        .style("display", regionIsVisible(region) ? "block" : "none")
         .append("svg")
         .attr("preserveAspectRatio", "xMinYMin meet")
         .attr(
@@ -263,7 +281,9 @@
         g
           .attr("class", "x-axis")
           .attr("transform", "translate(0," + y(0) + ")")
-          .call(d3.axisBottom(x).tickSizeOuter(0).tickFormat(multiFormat))
+          .call(
+            d3.axisBottom(x).tickSizeOuter(0).tickFormat(locale.format("%b"))
+          )
           .call((g) =>
             g
               .selectAll(".tick text")
@@ -274,6 +294,10 @@
 
       svg.append("g").call(xAxis);
       svg.append("g").call(yAxis);
+      svg
+        .append("g")
+        .attr("class", "grid")
+        .call(d3.axisLeft(y).ticks(5).tickSize(-width).tickFormat(""));
       var bars = svg.append("g").attr("class", "bars");
       bars
         .selectAll("rect")
@@ -296,6 +320,20 @@
         })
         .style("fill", function (d) {
           return d.deaths > 0 ? d3.schemeTableau10[2] : d3.schemeTableau10[4];
+        })
+        .on("mouseover", function (d) {
+          tooltip.transition().duration(200).style("opacity", 0.9);
+          tooltip
+            .html(
+              locale.format("%B")(d.date) +
+                `<br/>${d.deaths > 0 ? "+" : ""}` +
+                Math.round(d.deaths)
+            )
+            .style("left", d3.event.pageX + "px")
+            .style("top", d3.event.pageY - 28 + "px");
+        })
+        .on("mouseout", function (d) {
+          tooltip.transition().duration(500).style("opacity", 0);
         });
 
       svg
@@ -306,23 +344,24 @@
         .attr("text-anchor", "middle")
         .style("font-size", "11px")
         .style("text-decoration", "underline")
+        .append("a")
+        .attr("href", `?region=${region}`)
         .text(region);
     }
 
+    function regionIsVisible(region) {
+      return (
+        !window.searchQuery ||
+        region.toLowerCase().includes(window.searchQuery.toLowerCase())
+      );
+    }
     function toggleRegions(query) {
       document.querySelectorAll(".region-name").forEach(function (item) {
         var graph = item.parentElement.parentElement.parentElement;
-        graph.style.display = "none";
-        if (item.textContent.toLowerCase().includes(query.toLowerCase())) {
-          graph.style.display = "block";
-        }
+        graph.style.display = regionIsVisible(item.textContent)
+          ? "block"
+          : "none";
       });
     }
-
-    var searchBar = document.getElementById("searchBar");
-    searchBar.addEventListener("keyup", function (e) {
-      var query = this.value;
-      toggleRegions(query);
-    });
   </script>
 </body>

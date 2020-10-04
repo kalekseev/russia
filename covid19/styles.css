@@ -45,7 +45,7 @@ body {
 }
 
 h1 {
-  margin: 0 0 40px;
+  margin: 0 0 0;
   font-weight: 700;
   font-size: 25px;
   line-height: 1.2;
@@ -103,6 +103,10 @@ h1 {
   padding: 0 15px;
 }
 
+.single-region #graphs {
+  justify-content: center;
+}
+
 @media (min-width: 992px) {
   #graphs > div {
     flex-basis: 50%;
@@ -121,8 +125,8 @@ h1 {
 }
 
 #search {
-  margin-bottom: 40px;
   display: flex;
+  margin-bottom: 40px;
   align-items: center;
   justify-content: center;
 }
@@ -157,6 +161,53 @@ h1 {
 }
 
 #sources {
-  margin: 40px 0 0;
   text-align: center;
+  margin-bottom: 40px;
+}
+
+div.tooltip {
+  position: absolute;
+  display: table;
+  text-align: center;
+  width: 60px;
+  height: 28px;
+  padding: 2px;
+  font: 12px sans-serif;
+  background: white;
+  border: 0px;
+  border-radius: 8px;
+  border: solid 1px lightgray;
+  pointer-events: none;
+  padding: 10px;
+}
+
+#backToList {
+  display: none;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.single-region #backToList {
+  display: block;
+}
+
+.single-region #search {
+  display: none;
+}
+
+/* gridlines */
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 2px;
+}
+
+.grid line {
+  stroke: lightgrey;
+  stroke-opacity: 0.7;
+  shape-rendering: crispEdges;
+}
+
+.grid path {
+  stroke-width: 0;
 }
