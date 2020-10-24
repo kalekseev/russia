@@ -1,5 +1,6 @@
 import pathlib
 import re
+from functools import partial
 
 import pandas as pd
 
@@ -54,33 +55,58 @@ def read_month_deaths(year: int, month: int) -> dict:
     return data
 
 
-def read_year_deaths(year: int) -> dict:
-    return {month: read_month_deaths(year, month) for month in range(1, 13)}
+def with_covid_read_month_deaths(year: int, month: int) -> dict:
+    try:
+        data = pd.read_excel(
+            DATA_DIR / f"rosstat/covid/{year}/{month}.xlsx",
+            usecols="A,B,E",
+            skiprows=9,
+            index_col=0,
+            header=None,
+            squeeze=True,
+        )
+    except IOError:
+        return None
+    while data[1].isnull().any():
+        data = data[:-1]
+    data = data.to_dict()
+    from_covid = data[1]
+    with_covid = data[4]
+    data = {
+        region: (
+            0 if pd.isna(v) else int(v),
+            0 if pd.isna(wv := with_covid[k]) else int(wv),
+        )
+        for k, v in from_covid.items()
+        if (region := cleanup_region(k)) and not region.endswith("без автономии")
+    }
+    return data
 
 
-def read_deaths() -> dict:
+def read_year_deaths(parse_fn) -> dict:
+    return {month: parse_fn(month) for month in range(1, 13)}
+
+
+def read_deaths(parse_fn) -> dict:
     return {
-        year: data for year in range(2016, 2021) if (data := read_year_deaths(year))
+        year: data
+        for year in range(2016, 2021)
+        if (data := read_year_deaths(partial(parse_fn, year)))
     }
 
 
 if __name__ == "__main__":
-    data = read_deaths()
-    deaths = pd.DataFrame.from_dict(
-        {
-            f"{year}-{month:02}-01": value
-            for year in data.keys()
-            for month, value in data[year].items()
-        }
-    )
+    with_covid = read_deaths(with_covid_read_month_deaths)
+    data = read_deaths(read_month_deaths)
     csv_data = sorted(
-        [region, year, month, value]
+        [region, year, month, value, stat[0], stat[1]]
         for year, vyear in data.items()
         for month, mvalue in vyear.items()
         for region, value in (mvalue or {}).items()
+        if (stat := (with_covid[year][month] or {}).get(region, (0, 0)),)
     )
     deaths2 = pd.DataFrame.from_records(
-        csv_data, columns=["region", "year", "month", "deaths"]
+        csv_data,
+        columns=["region", "year", "month", "deaths", "from_covid", "with_covid"],
     )
-    deaths.to_csv(DATA_DIR / "deaths.csv")
     deaths2.to_csv(DATA_DIR / "deaths2.csv", index=False)

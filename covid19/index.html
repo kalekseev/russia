@@ -11,7 +11,10 @@
 
 <body>
   <div class="page">
-    <h1>Избыточная смертность в <span id="titleRegion">России</span> во время пандемии Covid19</h1>
+    <h1>
+      Избыточная смертность в <span id="titleRegion">России</span> во время
+      пандемии Covid19
+    </h1>
     <div id="sources">
       по данным
       <a href="https://rosstat.gov.ru/storage/mediabank/fBtgkZHk/edn08-2020.htm"
@@ -53,6 +56,7 @@
         2019 года
       </label>
     </div>
+    <div id="legend"></div>
     <div id="graphs"></div>
   </div>
   <script>
@@ -112,22 +116,28 @@
     async function getData() {
       const data = await d3.csv("data/deaths2.csv");
       const result = {};
-      data.forEach(({ region, year, month, deaths }) => {
-        result[region] = result[region] || [];
-        result[region].push({
-          date: new Date(+year, +month - 1, 1),
-          deaths: +deaths,
-        });
-      });
+      data.forEach(
+        ({ region, year, month, deaths, from_covid, with_covid }) => {
+          result[region] = result[region] || [];
+          result[region].push({
+            date: new Date(+year, +month - 1, 1),
+            deaths: +deaths,
+            fromCovid: +from_covid,
+            withCovid: +with_covid,
+          });
+        }
+      );
       return result;
     }
 
     var epoch = 0;
 
-    document.getElementById("searchBar").addEventListener("keyup", function (e) {
-      window.searchQuery = this.value;
-      toggleRegions();
-    });
+    document
+      .getElementById("searchBar")
+      .addEventListener("keyup", function (e) {
+        window.searchQuery = this.value;
+        toggleRegions();
+      });
 
     getData().then((data) => {
       window.data = data;
@@ -136,14 +146,67 @@
       if (!data[regionSelected]) {
         regionSelected = null;
       } else {
-        document.querySelector("#titleRegion").textContent = `"${regionSelected}"`;
-        document.querySelector('.page').classList.add('single-region')
+        document.querySelector(
+          "#titleRegion"
+        ).textContent = `"${regionSelected}"`;
+        document.querySelector(".page").classList.add("single-region");
       }
+
+      var color = d3.scaleOrdinal([
+        d3.schemeTableau10[2],
+        d3.schemeTableau10[3],
+        d3.schemeTableau10[5],
+      ]);
+      var domain = [
+        "Избыточная смертность",
+        "covid19 основная причина",
+        "covid19 не основная причина",
+      ];
+      color.domain(["deaths", "fromCovid", "withCovid"]);
+      var width = 250;
+      var svg = d3
+        .select("#legend")
+        .append("svg")
+        .attr("width", 250)
+        .attr("height", 120);
+      // .append('g')
+      // .attr('transform', 'translate(10, 10)');
+      var legend = svg
+        .selectAll(".legend")
+        .data(domain)
+        .enter()
+        .append("g")
+        // .attr("class", "legend")
+        .attr("transform", function (d, i) {
+          return "translate(0," + i * 20 + ")";
+        });
+      // .style("opacity","0");
+
+      legend
+        .append("rect")
+        .attr("x", width - 18)
+        .attr("width", 18)
+        .attr("height", 18)
+        .style("fill", function (d) {
+          return color(d);
+        });
+
+      legend
+        .append("text")
+        .attr("x", width - 24)
+        .attr("y", 9)
+        .attr("dy", ".35em")
+        .style("text-anchor", "end")
+        .style("font-size", "0.8rem")
+        .text(function (d) {
+          return d;
+        });
+
       main(data);
     });
 
     function clear() {
-      d3.selectAll('#graphs > div').remove();
+      d3.selectAll("#graphs > div").remove();
     }
     function handleRelativeToChange(input) {
       relativeTo = input.value;
@@ -226,7 +289,12 @@
     function calcData(data, baseline) {
       const plotData = data.filter((d) => d.date >= FIRST_MONTH);
       const yData = plotData.map((d) => {
-        return { date: d.date, deaths: d.deaths - baseline[d.date.getMonth()] };
+        return {
+          date: d.date,
+          deaths: d.deaths - baseline[d.date.getMonth()],
+          withCovid: d.withCovid,
+          fromCovid: d.fromCovid,
+        };
       });
       return yData;
     }
@@ -298,37 +366,65 @@
         .append("g")
         .attr("class", "grid")
         .call(d3.axisLeft(y).ticks(5).tickSize(-width).tickFormat(""));
-      var bars = svg.append("g").attr("class", "bars");
+      var bars = svg
+        .selectAll(".slice")
+        .data(data)
+        .enter()
+        .append("g")
+        .attr("class", "bars")
+        .attr("transform", function (d) {
+          return "translate(" + x(d.date) + ",0)";
+        });
+      //var bars = svg.append("g").attr("class", "bars");
+      var fill = d3.scaleOrdinal([
+        d3.schemeTableau10[2],
+        d3.schemeTableau10[3],
+        d3.schemeTableau10[5],
+      ]);
+      fill.domain(["deaths", "fromCovid", "withCovid"]);
       bars
         .selectAll("rect")
-        .data(data)
+        .data((d) => [
+          { type: "deaths", val: d.deaths },
+          { type: "fromCovid", val: d.fromCovid },
+          { type: "withCovid", val: d.withCovid, sval: d.fromCovid },
+        ])
         .enter()
         .append("rect")
         .attr("y", function (d) {
-          var h = y(d.deaths) - y(0);
-          if (h > 0) {
+          if (d.type === "withCovid") {
+            return y(d.sval) - Math.abs(y(d.val) - y(0));
+          }
+          if (y(d.val) > y(0)) {
             return y(0);
           }
-          return y(0) + h;
+          return y(d.val);
         })
         .attr("x", function (d) {
-          return x(d.date);
+          return d.type === "deaths" ? 0 : 6;
         })
-        .attr("width", (d) => x(d3.timeDay.offset(d.date, 10)) - x(d.date))
+        .attr("width", 6)
         .attr("height", function (d) {
-          return Math.abs(y(d.deaths) - y(0));
+          return Math.abs(y(d.val) - y(0));
         })
         .style("fill", function (d) {
-          return d.deaths > 0 ? d3.schemeTableau10[2] : d3.schemeTableau10[4];
+          return d.val > 0 ? fill(d.type) : d3.schemeTableau10[4];
         })
         .on("mouseover", function (d) {
+          var html = "";
+          var value = Math.round(d.val);
+          if (d.type === "deaths") {
+            html = `Избыточная сметрность <b>${
+              d.val > 0 ? "+" : ""
+            }${value}</b>`;
+          } else if (d.type === "fromCovid") {
+            html = `Умерло от covid19 <b>${value}</b>`;
+          } else {
+            html = `covid19 не основная причина смерти <b>${value}</b>`;
+          }
           tooltip.transition().duration(200).style("opacity", 0.9);
           tooltip
-            .html(
-              locale.format("%B")(d.date) +
-                `<br/>${d.deaths > 0 ? "+" : ""}` +
-                Math.round(d.deaths)
-            )
+            .html(html)
             .style("left", d3.event.pageX + "px")
             .style("top", d3.event.pageY - 28 + "px");
         })
