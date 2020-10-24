@@ -57,6 +57,17 @@
       </label>
     </div>
     <div id="legend"></div>
+    <div>
+      <label
+        ><input
+          type="checkbox"
+          onchange="changeShowStopCoronavirus(this)"
+        />включить статистику оперативного штаба (<a
+          href="http://стопкоронавирус.рф"
+          >стопкоронавирус.рф</a
+        >)</label
+      >
+    </div>
     <div id="graphs"></div>
   </div>
   <script>
@@ -114,16 +125,25 @@
       .style("opacity", 0);
     var relativeTo = "agg";
     async function getData() {
-      const data = await d3.csv("data/deaths2.csv");
+      const data = await d3.csv("data/deaths2.csv?hash=1");
       const result = {};
       data.forEach(
-        ({ region, year, month, deaths, from_covid, with_covid }) => {
+        ({
+          region,
+          year,
+          month,
+          deaths,
+          from_covid,
+          with_covid,
+          stopcoronavirus,
+        }) => {
           result[region] = result[region] || [];
           result[region].push({
             date: new Date(+year, +month - 1, 1),
             deaths: +deaths,
             fromCovid: +from_covid,
             withCovid: +with_covid,
+            stopcoronavirus: +stopcoronavirus,
           });
         }
       );
@@ -168,7 +188,7 @@
         .select("#legend")
         .append("svg")
         .attr("width", 250)
-        .attr("height", 120);
+        .attr("height", 60);
       // .append('g')
       // .attr('transform', 'translate(10, 10)');
       var legend = svg
@@ -208,8 +228,14 @@
     function clear() {
       d3.selectAll("#graphs > div").remove();
     }
+
     function handleRelativeToChange(input) {
       relativeTo = input.value;
+      setTimeout(() => main(window.data));
+    }
+
+    function changeShowStopCoronavirus(input) {
+      window.showStopCoronavirus = input.checked;
       setTimeout(() => main(window.data));
     }
 
@@ -294,6 +320,7 @@
           deaths: d.deaths - baseline[d.date.getMonth()],
           withCovid: d.withCovid,
           fromCovid: d.fromCovid,
+          stopcoronavirus: d.stopcoronavirus,
         };
       });
       return yData;
@@ -380,12 +407,16 @@
         d3.schemeTableau10[2],
         d3.schemeTableau10[3],
         d3.schemeTableau10[5],
+        d3.schemeTableau10[6],
       ]);
-      fill.domain(["deaths", "fromCovid", "withCovid"]);
+      fill.domain(["deaths", "fromCovid", "withCovid", "stopcoronavirus"]);
       bars
         .selectAll("rect")
         .data((d) => [
           { type: "deaths", val: d.deaths },
+          ...(window.showStopCoronavirus
+            ? [{ type: "stopcoronavirus", val: d.stopcoronavirus }]
+            : []),
           { type: "fromCovid", val: d.fromCovid },
           { type: "withCovid", val: d.withCovid, sval: d.fromCovid },
         ])
@@ -401,7 +432,11 @@
           return y(d.val);
         })
         .attr("x", function (d) {
-          return d.type === "deaths" ? 0 : 6;
+          return d.type === "deaths"
+            ? 0
+            : d.type === "stopcoronavirus"
+            ? 12
+            : 6;
         })
         .attr("width", 6)
         .attr("height", function (d) {
@@ -414,13 +449,13 @@
           var html = "";
           var value = Math.round(d.val);
           if (d.type === "deaths") {
-            html = `Избыточная сметрность <b>${
-              d.val > 0 ? "+" : ""
-            }${value}</b>`;
+            html = `Избыточная сметрность <b>${value}</b>`;
           } else if (d.type === "fromCovid") {
             html = `Умерло от covid19 <b>${value}</b>`;
-          } else {
+          } else if (d.type === "withCovid") {
             html = `covid19 не основная причина смерти <b>${value}</b>`;
+          } else {
+            html = `умерло по данным стопкоронавирус.рф <b>${value}</b>`;
           }
           tooltip.transition().duration(200).style("opacity", 0.9);
           tooltip

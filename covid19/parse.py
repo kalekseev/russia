@@ -83,6 +83,29 @@ def with_covid_read_month_deaths(year: int, month: int) -> dict:
     return data
 
 
+def get_parse_stopcoronavirus():
+    REPLACE = {
+        "Москва": "г.Москва",
+        "Санкт-Петербург": "г.Санкт-Петербург",
+        "Севастополь": "г.Севастополь",
+    }
+    data = pd.read_csv(DATA_DIR / "stopcoronavirus.csv")
+    data["date"] = [x.split(".", 1)[1] for x in data["date"]]
+    data = data.drop_duplicates(subset=["date"], keep="last")
+    data.columns = [REPLACE.get(c, c) for c in data.columns]
+    data.index = data["date"]
+    data = data.drop(columns=list(data.columns[0:6]))
+    data = data.fillna(0)
+    data = data.rolling(2).apply(lambda x: x[1] - x[0])
+    data = data.fillna(0).astype("int64")
+    data = data.T.to_dict()
+
+    def f(year, month):
+        return data.get(f"{month:02}.{year}")
+
+    return f
+
+
 def read_year_deaths(parse_fn) -> dict:
     return {month: parse_fn(month) for month in range(1, 13)}
 
@@ -96,17 +119,32 @@ def read_deaths(parse_fn) -> dict:
 
 
 if __name__ == "__main__":
+    sc = read_deaths(get_parse_stopcoronavirus())
     with_covid = read_deaths(with_covid_read_month_deaths)
     data = read_deaths(read_month_deaths)
     csv_data = sorted(
-        [region, year, month, value, stat[0], stat[1]]
+        [
+            region,
+            year,
+            month,
+            value,
+            *(with_covid[year][month] or {}).get(region, (0, 0)),
+            (sc[year][month] or {}).get(region, 0),
+        ]
         for year, vyear in data.items()
         for month, mvalue in vyear.items()
         for region, value in (mvalue or {}).items()
-        if (stat := (with_covid[year][month] or {}).get(region, (0, 0)),)
     )
     deaths2 = pd.DataFrame.from_records(
         csv_data,
-        columns=["region", "year", "month", "deaths", "from_covid", "with_covid"],
+        columns=[
+            "region",
+            "year",
+            "month",
+            "deaths",
+            "from_covid",
+            "with_covid",
+            "stopcoronavirus",
+        ],
     )
     deaths2.to_csv(DATA_DIR / "deaths2.csv", index=False)
