@@ -56,18 +56,20 @@
         />&nbsp; 2019 года
       </label>
     </div>
-    <div id="summary"></div>
-    <div style="margin-top: 20px; text-align: center">
+    <div style="margin-bottom: 20px; text-align: center">
       <label
+          class="stopcoronavirus-toggle"
         ><input
           type="checkbox"
+          checked
           onchange="changeShowStopCoronavirus(this)"
-          />&nbsp;показывать статистику оперативного штаба (<a
+        />&nbsp;показывать статистику оперативного штаба (<a
           href="http://стопкоронавирус.рф"
           >стопкоронавирус.рф</a
         >)</label
       >
     </div>
+    <div id="summary"></div>
     <div id="graphs"></div>
   </div>
   <script>
@@ -159,6 +161,7 @@
         toggleRegions();
       });
 
+    window.showStopCoronavirus = true;
     getData().then((data) => {
       window.data = data;
       var params = new URLSearchParams(document.location.search.substring(1));
@@ -221,13 +224,24 @@
     }
 
     function renderSummary(total) {
+          const sc = window.showStopCoronavirus ? `<tr><td>Умерло по данным стопкоронавирус.рф</td><td>${
+                total.stopcoronavirus
+              }</td><td class="legend stopcoronavirus-color"></td></tr>` : '';
       document.querySelector("#summary").innerHTML = `
         <table>
-            <tr><td>Избыточная смертность с апреля 2020</td><td class="legend excessive-color"></td><td>${total.excessiveFromApril2020.toFixed(0)}</td></tr>
-            <tr><td>Covid19 основная причина (росстат)</td><td class="legend from-covid-color"></td><td>${total.fromCovid}</td></tr>
-            <tr><td>Covid19 не основная причина (росстат)</td><td class="legend with-covid-color"></td><td>${total.withCovid}</td></tr>
-            <tr><td>Всего смертей с Covid19 (росстат)</td><td class="legend"></td><td>${total.withCovid + total.fromCovid}</td></tr>
-            <tr><td>Умерло по данным стопкоронавирус.рф</td><td class="legend stopcoronavirus-color"></td><td>${total.stopcoronavirus}</td></tr>
+            <tr><td>Избыточная смертность с апреля 2020</td><td>${total.excessiveFromApril2020.toFixed(
+              0
+            )}</td><td class="legend excessive-color"></td></tr>
+            ${sc}
+            <tr><td>Всего смертей с Covid19 (росстат)</td><td>${
+              total.withCovid + total.fromCovid
+            }</td><td class="legend"></td></tr>
+            <tr><td class="sub">Covid19 основная причина (росстат)</td><td>${
+              total.fromCovid
+            }</td><td class="legend from-covid-color"></td></tr>
+            <tr><td class="sub">Covid19 не основная причина (росстат)</td><td>${
+              total.withCovid
+            }</td><td class="legend with-covid-color"></td></tr>
       `;
     }
     function plotWithTimeout(data, regions, myEpoch) {
@@ -287,7 +301,8 @@
         total.excessive += deaths;
         total.withCovid += d.withCovid;
         total.fromCovid += d.fromCovid;
-        if (d.date.getFullYear() > 2020 || d.date.getMonth() > 3) {
+        const year = d.date.getFullYear();
+        if (year > 2020 || (year == 2020 && d.date.getMonth() > 2)) {
           total.excessiveFromApril2020 += deaths;
         }
         total.stopcoronavirus += d.stopcoronavirus;
