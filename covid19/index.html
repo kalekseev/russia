@@ -14,7 +14,7 @@
   <div class="page">
     <h1>
       Избыточная смертность в <span id="titleRegion">России</span> во время
-      пандемии Covid19
+      пандемии Covid19 (Август 2020)
     </h1>
     <div id="sources">
       по данным
@@ -44,7 +44,7 @@
           checked
           onclick="handleRelativeToChange(this);"
         />
-        <span>средней за 2016-2019</span>
+        <span>&nbsp;средней за 2016-2019</span>
       </label>
       <label>
         <input
@@ -53,17 +53,16 @@
           name="relative_to"
           value="2019"
           onclick="handleRelativeToChange(this);"
-        />
-        2019 года
+        />&nbsp; 2019 года
       </label>
     </div>
-    <div id="legend"></div>
-    <div>
+    <div id="summary"></div>
+    <div style="margin-top: 20px; text-align: center">
       <label
         ><input
           type="checkbox"
           onchange="changeShowStopCoronavirus(this)"
-        />включить статистику оперативного штаба (<a
+          />&nbsp;показывать статистику оперативного штаба (<a
           href="http://стопкоронавирус.рф"
           >стопкоронавирус.рф</a
         >)</label
@@ -172,57 +171,6 @@
         ).textContent = `"${regionSelected}"`;
         document.querySelector(".page").classList.add("single-region");
       }
-
-      var color = d3.scaleOrdinal([
-        d3.schemeTableau10[2],
-        d3.schemeTableau10[3],
-        d3.schemeTableau10[5],
-      ]);
-      var domain = [
-        "Избыточная смертность",
-        "covid19 основная причина",
-        "covid19 не основная причина",
-      ];
-      color.domain(["deaths", "fromCovid", "withCovid"]);
-      var width = 250;
-      var svg = d3
-        .select("#legend")
-        .append("svg")
-        .attr("width", 250)
-        .attr("height", 60);
-      // .append('g')
-      // .attr('transform', 'translate(10, 10)');
-      var legend = svg
-        .selectAll(".legend")
-        .data(domain)
-        .enter()
-        .append("g")
-        // .attr("class", "legend")
-        .attr("transform", function (d, i) {
-          return "translate(0," + i * 20 + ")";
-        });
-      // .style("opacity","0");
-
-      legend
-        .append("rect")
-        .attr("x", width - 18)
-        .attr("width", 18)
-        .attr("height", 18)
-        .style("fill", function (d) {
-          return color(d);
-        });
-
-      legend
-        .append("text")
-        .attr("x", width - 24)
-        .attr("y", 9)
-        .attr("dy", ".35em")
-        .style("text-anchor", "end")
-        .style("font-size", "0.8rem")
-        .text(function (d) {
-          return d;
-        });
-
       main(data);
     });
 
@@ -243,12 +191,20 @@
     function main(data) {
       var myEpoch = ++epoch;
       clear();
+      const total = {
+        excessive: 0,
+        excessiveFromApril2020: 0,
+        withCovid: 0,
+        fromCovid: 0,
+        stopcoronavirus: 0,
+      };
       if (regionSelected) {
         const baseline =
           relativeTo === "agg"
             ? meanYearsBaseline(data[regionSelected])
             : year2019Baseline(data[regionSelected]);
-        var result = calcData(data[regionSelected], baseline);
+        var result = calcData(data[regionSelected], baseline, total);
+        renderSummary(total);
         plotRegion(result, regionSelected);
       } else {
         const result = {};
@@ -257,12 +213,23 @@
             relativeTo === "agg"
               ? meanYearsBaseline(data[region])
               : year2019Baseline(data[region]);
-          result[region] = calcData(data[region], baseline);
+          result[region] = calcData(data[region], baseline, total);
         });
+        renderSummary(total);
         plotWithTimeout(result, orderRegionsByAbsYearDeaths(result), myEpoch);
       }
     }
 
+    function renderSummary(total) {
+      document.querySelector("#summary").innerHTML = `
+        <table>
+            <tr><td>Избыточная смертность с апреля 2020</td><td class="legend excessive-color"></td><td>${total.excessiveFromApril2020.toFixed(0)}</td></tr>
+            <tr><td>Covid19 основная причина (росстат)</td><td class="legend from-covid-color"></td><td>${total.fromCovid}</td></tr>
+            <tr><td>Covid19 не основная причина (росстат)</td><td class="legend with-covid-color"></td><td>${total.withCovid}</td></tr>
+            <tr><td>Всего смертей с Covid19 (росстат)</td><td class="legend"></td><td>${total.withCovid + total.fromCovid}</td></tr>
+            <tr><td>Умерло по данным стопкоронавирус.рф</td><td class="legend stopcoronavirus-color"></td><td>${total.stopcoronavirus}</td></tr>
+      `;
+    }
     function plotWithTimeout(data, regions, myEpoch) {
       if (!regions.length) {
         return;
@@ -313,12 +280,20 @@
       return baseline;
     }
 
-    function calcData(data, baseline) {
+    function calcData(data, baseline, total) {
       const plotData = data.filter((d) => d.date >= FIRST_MONTH);
       const yData = plotData.map((d) => {
+        const deaths = d.deaths - baseline[d.date.getMonth()];
+        total.excessive += deaths;
+        total.withCovid += d.withCovid;
+        total.fromCovid += d.fromCovid;
+        if (d.date.getFullYear() > 2020 || d.date.getMonth() > 3) {
+          total.excessiveFromApril2020 += deaths;
+        }
+        total.stopcoronavirus += d.stopcoronavirus;
         return {
           date: d.date,
-          deaths: d.deaths - baseline[d.date.getMonth()],
+          deaths: deaths,
           withCovid: d.withCovid,
           fromCovid: d.fromCovid,
           stopcoronavirus: d.stopcoronavirus,

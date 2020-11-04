@@ -211,3 +211,28 @@ div.tooltip {
 .grid path {
   stroke-width: 0;
 }
+
+#summary table {
+  margin: 0 auto;
+}
+
+#summary .legend {
+  width: 28px;
+}
+
+#summary td {
+  padding: 0 10px;
+  border-bottom: 1px solid lightgray;
+}
+
+.excessive-color {
+  background-color: rgb(225, 87, 89);
+}
+
+.from-covid-color {
+  background-color: rgb(118, 183, 178);
+}
+
+.with-covid-color {
+  background-color: rgb(237, 201, 73);
+}
