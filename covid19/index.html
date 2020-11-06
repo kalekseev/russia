@@ -14,11 +14,11 @@
   <div class="page">
     <h1>
       Избыточная смертность в <span id="titleRegion">России</span> во время
-      пандемии Covid19 (Август 2020)
+      пандемии Covid19 (Сентябрь 2020)
     </h1>
     <div id="sources">
       по данным
-      <a href="https://rosstat.gov.ru/storage/mediabank/fBtgkZHk/edn08-2020.htm"
+      <a href="https://rosstat.gov.ru/storage/mediabank/vuOQk0xl/edn09-2020.htm"
         >росстата</a
       >
     </div>
@@ -127,7 +127,7 @@
       .style("opacity", 0);
     var relativeTo = "agg";
     async function getData() {
-      const data = await d3.csv("data/deaths2.csv?hash=1");
+      const data = await d3.csv("data/deaths2.csv?hash=09");
       const result = {};
       data.forEach(
         ({
