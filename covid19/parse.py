@@ -89,19 +89,23 @@ def get_parse_stopcoronavirus():
         "Санкт-Петербург": "г.Санкт-Петербург",
         "Севастополь": "г.Севастополь",
     }
-    data = pd.read_csv(DATA_DIR / "stopcoronavirus.csv")
-    data["date"] = [x.split(".", 1)[1] for x in data["date"]]
-    data = data.drop_duplicates(subset=["date"], keep="last")
+    data = pd.read_csv(
+        "data/stopcoronavirus.csv",
+        names=["date", "region", "deaths"],
+        index_col="date",
+    )
+    data = data.pivot_table(
+        values="deaths", index=data.index, columns="region", aggfunc="sum"
+    )
     data.columns = [REPLACE.get(c, c) for c in data.columns]
-    data.index = data["date"]
-    data = data.drop(columns=list(data.columns[0:6]))
-    data = data.fillna(0)
-    data = data.rolling(2).apply(lambda x: x[1] - x[0])
+    data.index = [d.rsplit("-", 1)[0] for d in data.index]
+    data.index.name = "month"
     data = data.fillna(0).astype("int64")
+    data = data.groupby("month").agg(sum)
     data = data.T.to_dict()
 
     def f(year, month):
-        return data.get(f"{month:02}.{year}")
+        return data.get(f"{year}-{month:02}")
 
     return f
 
