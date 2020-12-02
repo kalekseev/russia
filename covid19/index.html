@@ -38,22 +38,22 @@
       <label>
         <input
           type="radio"
-          id="relative_to_agg"
+          id="relative_to_2019"
           name="relative_to"
-          value="agg"
+          value="2019"
           checked
           onclick="handleRelativeToChange(this);"
-        />
-        <span>&nbsp;средней за 2016-2019</span>
+        />&nbsp; 2019 года
       </label>
       <label>
         <input
           type="radio"
-          id="relative_to_2019"
+          id="relative_to_agg"
           name="relative_to"
-          value="2019"
+          value="agg"
           onclick="handleRelativeToChange(this);"
-        />&nbsp; 2019 года
+        />
+        <span>&nbsp;средней за 2016-2019</span>
       </label>
     </div>
     <div style="margin-bottom: 20px; text-align: center">
@@ -125,7 +125,7 @@
       .append("div")
       .attr("class", "tooltip")
       .style("opacity", 0);
-    var relativeTo = "agg";
+    var relativeTo = "2019";
     async function getData() {
       const data = await d3.csv("data/deaths2.csv?hash=09");
       const result = {};
