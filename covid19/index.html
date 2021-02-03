@@ -15,7 +15,7 @@
     <h1>
       Избыточная смертность в <span id="titleRegion">России</span> во время
       пандемии Covid19 (Ноябрь 2020)
-    </h1>
+3   </h1>
     <div id="sources">
       по данным
       <a href="https://rosstat.gov.ru/storage/mediabank/vuOQk0xl/edn09-2020.htm"
@@ -61,7 +61,6 @@
           class="stopcoronavirus-toggle"
         ><input
           type="checkbox"
-          checked
           onchange="changeShowStopCoronavirus(this)"
         />&nbsp;показывать статистику оперативного штаба (<a
           href="http://стопкоронавирус.рф"
@@ -73,7 +72,7 @@
     <div id="graphs"></div>
   </div>
   <script>
-    const FIRST_MONTH = new Date(2020, 0, 1);
+    const FIRST_MONTH = new Date(2020, 3, 1);
     var locale = d3.timeFormatLocale({
       dateTime: "%A, %e %B %Y г. %X",
       date: "%d.%m.%Y",
@@ -161,7 +160,7 @@
         toggleRegions();
       });
 
-    window.showStopCoronavirus = true;
+    window.showStopCoronavirus = false;
     getData().then((data) => {
       window.data = data;
       var params = new URLSearchParams(document.location.search.substring(1));
