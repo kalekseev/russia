@@ -1,3 +1,6 @@
+start:
+		python -m http.server
+
 pull.stopcoronavirus:
 	curl https://raw.githubusercontent.com/alexei-kouprianov/COVID.2019.ru/master/data/momentary.da.txt.gz | \
 		gunzip - | \
