@@ -117,7 +117,7 @@ def read_year_deaths(parse_fn) -> dict:
 def read_deaths(parse_fn) -> dict:
     return {
         year: data
-        for year in range(2016, 2021)
+        for year in range(2016, 2022)
         if (data := read_year_deaths(partial(parse_fn, year)))
     }
 
