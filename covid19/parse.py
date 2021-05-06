@@ -29,18 +29,22 @@ def cleanup_region(r: str) -> str:
 def read_month_deaths(year: int, month: int) -> dict:
     data = None
     for ext in ["xlsx", "xls"]:
+        kwargs = {
+            "io": DATA_DIR / f"rosstat/deaths/{year}/edn{month:02}-{year}.{ext}",
+            "sheet_name": "t1_1",
+            "usecols": "A,F",
+            "skiprows": 6,
+            "index_col": 0,
+            "header": None,
+            "squeeze": True,
+        }
         try:
-            data = pd.read_excel(
-                DATA_DIR / f"rosstat/deaths/{year}/edn{month:02}-{year}.{ext}",
-                sheet_name="t1_1",
-                usecols="A,F",
-                skiprows=6,
-                index_col=0,
-                header=None,
-                squeeze=True,
-            )
+            data = pd.read_excel(**kwargs)
         except IOError:
             pass
+        except ValueError:
+            kwargs["sheet_name"] = "Лист1"
+            data = pd.read_excel(**kwargs)
 
     if data is None:
         return None
