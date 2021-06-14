@@ -2,8 +2,7 @@
 
 Rosstat data source:
 
-- https://rosstat.gov.ru/storage/mediabank/fBtgkZHk/edn08-2020.htm (August 2020)
-- https://rosstat.gov.ru/storage/mediabank/vuOQk0xl/edn09-2020.htm (September 2020)
+- https://rosstat.gov.ru/storage/mediabank/lN8GgJ5B/edn04-2021.htm
 
 стокоронавирус.рф data sources:
 
