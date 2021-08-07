@@ -63,7 +63,7 @@ def with_covid_read_month_deaths(year: int, month: int) -> dict:
     try:
         data = pd.read_excel(
             DATA_DIR / f"rosstat/covid/{year}/{month}.xlsx",
-            usecols="A,B,E",
+            usecols="A,B,K" if (year > 2020 and month > 4) else "A,B,E",
             skiprows=9,
             index_col=0,
             header=None,
@@ -75,7 +75,7 @@ def with_covid_read_month_deaths(year: int, month: int) -> dict:
         data = data[:-1]
     data = data.to_dict()
     from_covid = data[1]
-    with_covid = data[4]
+    with_covid = data[10 if (year > 2020 and month > 4) else 4]
     data = {
         region: (
             0 if pd.isna(v) else int(v),
