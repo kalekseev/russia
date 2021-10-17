@@ -60,7 +60,7 @@ def read_month_deaths(year: int, month: int) -> dict:
 
 
 def _cols_predicate(year, month):
-    return year == 2021 and 4 < month < 7
+    return year == 2021 and 4 < month and month != 7
 
 
 def with_covid_read_month_deaths(year: int, month: int) -> dict:
