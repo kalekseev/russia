@@ -15,6 +15,8 @@ def cleanup_region(r: str) -> str:
         r = r.replace("H", "Н")
     elif "Севастополь" in r:
         return "г.Севастополь"
+    elif "Санкт-Петербург" in r:
+        return "г.Санкт-Петербург"
     elif r == "А":
         return ""
     elif "федер" in r.lower():
@@ -60,7 +62,7 @@ def read_month_deaths(year: int, month: int) -> dict:
 
 
 def _cols_predicate(year, month):
-    return year == 2021 and 4 < month and month != 7
+    return (year == 2021 and 4 < month and month != 7) or year > 2021
 
 
 def with_covid_read_month_deaths(year: int, month: int) -> dict:
@@ -125,7 +127,7 @@ def read_year_deaths(parse_fn) -> dict:
 def read_deaths(parse_fn) -> dict:
     return {
         year: data
-        for year in range(2016, 2022)
+        for year in range(2016, 2023)
         if (data := read_year_deaths(partial(parse_fn, year)))
     }
 

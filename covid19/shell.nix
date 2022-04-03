@@ -1,16 +1,16 @@
 { system ? builtins.currentSystem }:
 let
-  src = fetchTarball {
-    url = "https://github.com/numtide/devshell/archive/f64db97388dda7c2c6f8fb7aa5d6d08365fb1e01.tar.gz";
-    sha256 = "1421h6bhsg4fishz10092m71qnd5ll6129l45kychzh9kp23040s";
-  };
   pkgsSrc = fetchTarball {
-    url = "https://github.com/NixOS/nixpkgs/archive/3a2e0c36e79cecaf196cbea23e75e74710140ea4.tar.gz";
-    sha256 = "0gjv2y6vjn3sdpg8ljcw2mk99c1xxdrfv11pc8kf5ms64wby20g5";
+    url = "https://github.com/NixOS/nixpkgs/archive/bacc31ff571ece62147f3ba70cb6d8d8f483a949.tar.gz";
+    sha256 = "1wbgry1as0867bk5mmx3954pya41j34b3g6af4dpah9mh1ai2jc6";
+  };
+  devshellSrc = fetchTarball {
+    url = "https://github.com/numtide/devshell/archive/f87fb932740abe1c1b46f6edd8a36ade17881666.tar.gz";
+    sha256 = "10cimkql88h7jfjli89i8my8j5la91zm4c78djqlk22dqrxmm6bs";
   };
   pkgs = import pkgsSrc { };
-  devshell = import src { inherit system; };
-  python = pkgs.python3.withPackages (ps: [ ps.pandas ps.xlrd ps.ipython ]);
+  devshell = import devshellSrc { inherit system; };
+  python = pkgs.python3.withPackages (ps: [ ps.pandas ps.xlrd ps.ipython ps.openpyxl ]);
 in
 devshell.mkShell {
   name = "russia";

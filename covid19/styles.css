@@ -110,15 +110,9 @@ h1 {
   justify-content: center;
 }
 
-@media (min-width: 992px) {
-  #graphs > div {
-    flex-basis: 50%;
-  }
-}
-
 @media (min-width: 1600px) {
   #graphs > div {
-    flex-basis: 33.3%;
+    flex-basis: 50%;
   }
 }
 
