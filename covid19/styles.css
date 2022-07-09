@@ -112,7 +112,8 @@ h1 {
 
 @media (min-width: 1600px) {
   #graphs > div {
-    flex-basis: 50%;
+    max-width: 1140px;
+    margin: auto;
   }
 }
 

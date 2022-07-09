@@ -13,3 +13,6 @@ pull.stopcoronavirus:
 		sed 's|—|-|' | sed 's|АО|автономный округ|' | sed s'|область |область|' \
 		> data/stopcoronavirus.csv
 
+# pull.rosstat.05-2022
+pull.rosstat.%:
+	curl https://rosstat.gov.ru/storage/mediabank/edn_$(subst pull.rosstat.,,$@)-2022_t1_1.xlsx -O
